@@ -1,6 +1,3 @@
-// ==========================================
-// 0. SIHIR MULTI-BAHASA
-// ==========================================
 const translations = {
   en: {
     heroSub: "The Web3 Ocean is Yours", heroDesc: "The most aesthetic crypto wallet. Dive into the decentralized network, manage your assets, and track your treasure radar like a true Whale.",
@@ -98,9 +95,7 @@ const setLanguage = (lang) => {
   });
 };
 
-// ==========================================
-// 1. LIVE WHALE ALERT SYSTEM (FITUR DEWA BARU! 🚨)
-// ==========================================
+
 const alertContainer = document.getElementById('whale-alert-container');
 const spawnAlert = () => {
   if(!alertContainer) return;
@@ -129,9 +124,6 @@ const spawnAlert = () => {
 setInterval(spawnAlert, Math.random() * 8000 + 12000);
 
 
-// ==========================================
-// 2. LIVE GAS FEE & CRYPTO TICKER 📈
-// ==========================================
 setInterval(() => {
   const gasEl = document.getElementById('gas-fee');
   let newGas = parseInt(gasEl.innerText) + Math.floor(Math.random() * 5) - 2;
@@ -155,9 +147,7 @@ const generateTicker = () => {
 };
 generateTicker();
 
-// ==========================================
-// 3. AUDIO SFX 🔊
-// ==========================================
+
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 const playSonar = () => {
   if(audioCtx.state === 'suspended') audioCtx.resume();
@@ -176,9 +166,7 @@ const playBloop = () => {
   osc.start(); osc.stop(audioCtx.currentTime + 0.1);
 };
 
-// ==========================================
-// 4. VISUAL MAGIC (RIPPLE, BUBBLES, TRAIL, NFT 3D) 🌊
-// ==========================================
+
 document.addEventListener('click', (e) => {
   const ripple = document.createElement('div'); ripple.className = 'ripple';
   ripple.style.left = `${e.clientX}px`; ripple.style.top = `${e.clientY}px`;
@@ -220,7 +208,7 @@ window.addEventListener('scroll', () => {
   if (heroText) heroText.style.transform = `translateY(${scrollY * 0.5}px) scale(${1 - scrollY * 0.0005})`;
 });
 
-// FITUR BARU: 3D HOLOGRAM NFT CARDS ✨
+
 const nftCards = document.querySelectorAll('.nft-card');
 nftCards.forEach(card => {
   card.addEventListener('mousemove', (e) => {
@@ -239,9 +227,6 @@ nftCards.forEach(card => {
 });
 
 
-// ==========================================
-// 5. RADAR GACHA MINI-GAME 🎯
-// ==========================================
 const btnRadar = document.getElementById('btn-radar');
 const radarSweep = document.getElementById('radar-sweep');
 const radarResult = document.getElementById('radar-result');
@@ -271,9 +256,7 @@ btnRadar.addEventListener('click', (e) => {
   }, 2000);
 });
 
-// ==========================================
-// 6. CORE WEB3 LOGIC
-// ==========================================
+
 let ethChartInstance = null; let userProvider = null; let userSigner = null;   
 let userEthBalance = 0; let userAddressFull = ""; 
 
@@ -346,7 +329,7 @@ copyBtn.addEventListener('click', (e) => {
   setTimeout(() => { addrText.innerText = shortenAddress(userAddressFull); addrText.classList.replace('text-green-400', 'text-cyan-100'); }, 2000);
 });
 
-// TAB & SEND LOGIC
+
 const switchTab = (tabName) => {
   ['token', 'nft', 'activity'].forEach(tab => {
     const btn = document.getElementById(`tab-btn-${tab}`);
