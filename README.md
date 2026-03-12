@@ -1,3 +1,6 @@
+![GitHub top language](https://img.shields.io/github/languages/top/Medaka356/nexus-whale?color=cyan&style=for-the-badge)
+![GitHub repo size](https://img.shields.io/github/repo-size/Medaka356/nexus-whale?color=blue&style=for-the-badge)
+![Web3 Badge](https://img.shields.io/badge/Web3-Ready-purple?style=for-the-badge)
 # 🐋 Nexus Whale | The Apex Web3 Dashboard
 
 Nexus Whale is a premium, high-performance Web3 wallet dashboard and management interface. Designed for the "Whales" of the crypto world, it combines advanced visual interactions with real-time blockchain data.
