@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexus Whale | The Apex Web3 Wallet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;900&display=swap');
+    body { font-family: 'Space Grotesk', sans-serif; background-color: #080f1e; overflow-x: hidden; cursor: crosshair; }
+    .glass-card { background: rgba(13, 25, 48, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(34, 211, 238, 0.15); }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(34, 211, 238, 0.3); border-radius: 10px; } 
+
+    .bubble { position: absolute; bottom: -50px; background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.2); border-radius: 50%; animation: floatUp infinite ease-in; }
+    @keyframes floatUp { 0% { transform: translateY(0) scale(1) rotate(0deg); opacity: 0; } 10% { opacity: 1; } 100% { transform: translateY(-150vh) scale(1.5) rotate(360deg); opacity: 0; } }
+    .animate-marquee { display: flex; width: max-content; animation: marquee 30s linear infinite; }
+    @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+    .swimming-whale { position: fixed; top: 20%; left: -50%; width: 800px; opacity: 0.03; z-index: 0; animation: swimRight 45s linear infinite; pointer-events: none; color: #22d3ee; }
+    @keyframes swimRight { 0% { transform: translateX(0) translateY(0px) rotate(5deg); } 50% { transform: translateX(70vw) translateY(100px) rotate(-5deg); } 100% { transform: translateX(150vw) translateY(-50px) rotate(5deg); } }
+    .ext-bg { background: linear-gradient(180deg, #111827 0%, #0f172a 100%); }
+    
+    @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    @keyframes slideInLeft { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes slideOutLeft { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-100%); opacity: 0; } }
+
+    .animate-ticker { animation: tickerAnim 20s linear infinite; }
+    @keyframes tickerAnim { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+    .ripple { position: fixed; border-radius: 50%; border: 2px solid rgba(34, 211, 238, 0.6); transform: translate(-50%, -50%); pointer-events: none; animation: rippleAnim 0.6s ease-out forwards; z-index: 9999; }
+    @keyframes rippleAnim { 0% { width: 0px; height: 0px; opacity: 0.8; } 100% { width: 120px; height: 120px; opacity: 0; } }
+    .cursor-trail { position: fixed; width: 6px; height: 6px; background: #22d3ee; border-radius: 50%; pointer-events: none; z-index: 9998; box-shadow: 0 0 10px #22d3ee, 0 0 20px #3b82f6; animation: trailFade 0.8s linear forwards; }
+    @keyframes trailFade { 0% { opacity: 0.8; transform: scale(1) translateY(0); } 100% { opacity: 0; transform: scale(0.2) translateY(30px); } }
+    @keyframes spin-radar { 100% { transform: rotate(360deg); } }
+  </style>
+</head>
+<body class="text-white relative selection:bg-cyan-500/30 overflow-x-hidden">
+
+  <nav class="fixed top-0 w-full z-[100] px-4 md:px-6 py-4 flex justify-between items-center bg-[#080f1e]/90 backdrop-blur-xl border-b border-cyan-900/30 transition-all">
+    <div class="font-black text-xl tracking-widest text-white flex items-center gap-3">
+      <svg class="w-6 h-6 text-cyan-400" fill="currentColor" viewBox="0 0 512 512"><path d="M112 112c0-35.3 28.7-64 64-64h16c8.8 0 16-7.2 16-16s-7.2-16-16-16H176C123 16 80 59 80 112v16c0 8.8 7.2 16 16 16s16-7.2 16-16V112zm384 144c0-26.5-21.5-48-48-48H395c-9.1-34.9-30-66.2-59.5-88.8-19.1-14.7-44-18.7-66.8-10.8-21.4 7.4-40 21.4-52.6 40.5-8.2 12.4-23.7 17.5-37.5 12.3l-20-7.5c-23.9-9-49.8-11.2-74.9-6.3-25.2 4.9-48.8 15.8-68.5 31.6L0 200.5V368c0 26.5 21.5 48 48 48h416c26.5 0 48-21.5 48-48V256zM128 320c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32z"></path></svg>
+      <span class="hidden md:block">NEXUS <span class="text-cyan-400">WHALE</span></span>
+    </div>
+    
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-700 text-slate-300 shadow-inner cursor-help" title="Ethereum Gas Fee">
+        <span class="text-sm">⛽</span>
+        <span class="text-xs font-bold font-mono"><span id="gas-fee" class="text-green-400">12</span> Gwei</span>
+      </div>
+
+      <div class="relative group cursor-pointer z-[110]">
+        <div class="flex items-center gap-2 p-2 rounded-full hover:bg-slate-800 transition-colors">
+          <svg class="w-5 h-5 text-slate-300 group-hover:text-cyan-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+          <span id="current-lang" class="text-xs font-bold text-slate-300 group-hover:text-white uppercase">EN</span>
+        </div>
+        <div class="absolute right-0 mt-2 w-40 bg-[#0d1930] border border-cyan-900/50 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right overflow-hidden">
+          <div class="py-1">
+            <button onclick="setLanguage('en')" id="lang-en" class="w-full text-left px-4 py-2 text-sm text-cyan-400 font-bold bg-cyan-900/20">English</button>
+            <button onclick="setLanguage('id')" id="lang-id" class="w-full text-left px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">Indonesia</button>
+            <button onclick="setLanguage('zh')" id="lang-zh" class="w-full text-left px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">简体中文</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="fixed top-[68px] md:top-[72px] w-full z-[90] bg-[#060b14]/80 border-b border-cyan-900/30 overflow-hidden flex text-[10px] md:text-xs font-mono py-1.5 backdrop-blur-sm text-slate-400 pointer-events-none">
+    <div class="animate-ticker flex whitespace-nowrap" id="crypto-ticker"></div>
+  </div>
+
+  <div id="whale-alert-container" class="fixed bottom-10 left-6 z-[90] flex flex-col gap-3 pointer-events-none w-80"></div>
+
+  <div id="orb-cyan" class="fixed top-20 left-20 w-96 h-96 bg-cyan-600/20 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
+  <div id="orb-blue" class="fixed bottom-20 right-20 w-96 h-96 bg-blue-600/20 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
+  <div id="bubbles-container" class="fixed inset-0 overflow-hidden pointer-events-none z-0"></div>
+  <svg class="swimming-whale" fill="currentColor" viewBox="0 0 512 512"><path d="M112 112c0-35.3 28.7-64 64-64h16c8.8 0 16-7.2 16-16s-7.2-16-16-16H176C123 16 80 59 80 112v16c0 8.8 7.2 16 16 16s16-7.2 16-16V112zm384 144c0-26.5-21.5-48-48-48H395c-9.1-34.9-30-66.2-59.5-88.8-19.1-14.7-44-18.7-66.8-10.8-21.4 7.4-40 21.4-52.6 40.5-8.2 12.4-23.7 17.5-37.5 12.3l-20-7.5c-23.9-9-49.8-11.2-74.9-6.3-25.2 4.9-48.8 15.8-68.5 31.6L0 200.5V368c0 26.5 21.5 48 48 48h416c26.5 0 48-21.5 48-48V256zM128 320c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32z"></path></svg>
+
+  <section class="min-h-screen flex flex-col items-center justify-center relative z-10 pt-10">
+    <div id="hero-text" class="text-center transition-all duration-100 ease-out">
+      <div id="t-hero-sub" class="inline-block px-4 py-1.5 mb-6 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 text-xs font-bold tracking-widest uppercase shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+        The Web3 Ocean is Yours
+      </div>
+      <h1 class="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white via-cyan-200 to-blue-600 mb-6 tracking-tighter drop-shadow-2xl">
+        NEXUS WHALE
+      </h1>
+      <p id="t-hero-desc" class="text-lg md:text-xl text-cyan-100/60 max-w-2xl mx-auto px-4 leading-relaxed">
+        The most aesthetic crypto wallet. Dive into the decentralized network, manage your assets, and track your treasure radar like a true Whale.
+      </p>
+    </div>
+    <div class="absolute bottom-10 flex flex-col items-center gap-2 animate-bounce opacity-50 text-cyan-400 pointer-events-none">
+      <p id="t-scroll" class="text-xs tracking-widest uppercase font-bold">Scroll to Dive</p>
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+    </div>
+  </section>
+
+  <section class="py-10 border-y border-cyan-900/30 bg-slate-900/20 backdrop-blur-sm relative z-10 overflow-hidden">
+    <div class="text-center mb-6">
+      <p id="t-marquee-title" class="text-xs text-cyan-400/60 font-bold uppercase tracking-[0.3em]">Supporting The Largest Ecosystems</p>
+    </div>
+    <div class="relative w-full overflow-hidden flex">
+      <div class="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-[#080f1e] to-transparent z-10"></div>
+      <div class="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-[#080f1e] to-transparent z-10"></div>
+      <div class="animate-marquee items-center">
+        <div class="flex gap-20 items-center px-10">
+          <h3 class="text-2xl font-bold text-slate-400 flex items-center gap-3"><svg class="w-8 h-8 text-cyan-400" viewBox="0 0 32 32" fill="currentColor"><path d="M15.925 23.96l-9.819-5.799L15.925 32l9.824-13.839zM16.075 0L6.255 16.273l9.82 5.805 9.82-5.805z"/></svg> Ethereum</h3>
+          <h3 class="text-2xl font-bold text-slate-400 flex items-center gap-3"><svg class="w-8 h-8 text-yellow-500" viewBox="0 0 32 32" fill="currentColor"><path d="M16 3.556l-5.32 5.32L16 14.195l5.32-5.319zm0 24.888l5.32-5.32L16 17.805l-5.32 5.319zm-7.618-7.618L3.062 15.5l5.32-5.32L13.7 15.5zm15.236 0L28.938 15.5l-5.32-5.32L18.3 15.5z"/></svg> Binance Chain</h3>
+          <h3 class="text-2xl font-bold text-slate-400 flex items-center gap-3"><svg class="w-8 h-8 text-purple-500" viewBox="0 0 32 32" fill="currentColor"><path d="M21.22 13.57l-4.52-2.6a1.53 1.53 0 00-1.53 0l-4.51 2.6a1.5 1.5 0 00-.76 1.3v5.21a1.5 1.5 0 00.76 1.3l4.51 2.6a1.53 1.53 0 001.53 0l4.52-2.6a1.5 1.5 0 00.76-1.3v-5.2a1.5 1.5 0 00-.76-1.31z"/></svg> Polygon</h3>
+          <h3 class="text-2xl font-bold text-slate-400 flex items-center gap-3"><svg class="w-8 h-8 text-blue-500" viewBox="0 0 32 32" fill="currentColor"><path d="M16 2a14 14 0 100 28 14 14 0 000-28zm-4.3 20.5l4.3-12 4.3 12h-2.2l-2.1-6-2.1 6z"/></svg> Arbitrum</h3>
+        </div>
+        <div class="flex gap-20 items-center px-10">
+          <h3 class="text-2xl font-bold text-slate-400 flex items-center gap-3"><svg class="w-8 h-8 text-cyan-400" viewBox="0 0 32 32" fill="currentColor"><path d="M15.925 23.96l-9.819-5.799L15.925 32l9.824-13.839zM16.075 0L6.255 16.273l9.82 5.805 9.82-5.805z"/></svg> Ethereum</h3>
+          <h3 class="text-2xl font-bold text-slate-400 flex items-center gap-3"><svg class="w-8 h-8 text-yellow-500" viewBox="0 0 32 32" fill="currentColor"><path d="M16 3.556l-5.32 5.32L16 14.195l5.32-5.319zm0 24.888l5.32-5.32L16 17.805l-5.32 5.319zm-7.618-7.618L3.062 15.5l5.32-5.32L13.7 15.5zm15.236 0L28.938 15.5l-5.32-5.32L18.3 15.5z"/></svg> Binance Chain</h3>
+          <h3 class="text-2xl font-bold text-slate-400 flex items-center gap-3"><svg class="w-8 h-8 text-purple-500" viewBox="0 0 32 32" fill="currentColor"><path d="M21.22 13.57l-4.52-2.6a1.53 1.53 0 00-1.53 0l-4.51 2.6a1.5 1.5 0 00-.76 1.3v5.21a1.5 1.5 0 00.76 1.3l4.51 2.6a1.53 1.53 0 001.53 0l4.52-2.6a1.5 1.5 0 00.76-1.3v-5.2a1.5 1.5 0 00-.76-1.31z"/></svg> Polygon</h3>
+          <h3 class="text-2xl font-bold text-slate-400 flex items-center gap-3"><svg class="w-8 h-8 text-blue-500" viewBox="0 0 32 32" fill="currentColor"><path d="M16 2a14 14 0 100 28 14 14 0 000-28zm-4.3 20.5l4.3-12 4.3 12h-2.2l-2.1-6-2.1 6z"/></svg> Arbitrum</h3>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-32 relative z-10 max-w-7xl mx-auto px-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10 items-center">
+      <div class="space-y-6">
+        <div class="glass-card p-8 rounded-[2rem] hover:-translate-y-1 transition-transform duration-300">
+          <div class="w-14 h-14 rounded-2xl bg-cyan-900/50 border border-cyan-500/30 flex items-center justify-center mb-6 text-cyan-400"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg></div>
+          <h3 id="t-bento1-title" class="text-xl font-bold mb-2 text-white">Deep Sea Security</h3>
+          <p id="t-bento1-desc" class="text-cyan-100/50 text-sm leading-relaxed">Mariana trench level security. We never store your Private Keys.</p>
+        </div>
+        <div class="glass-card p-8 rounded-[2rem] hover:-translate-y-1 transition-transform duration-300">
+          <div class="w-14 h-14 rounded-2xl bg-blue-900/50 border border-blue-500/30 flex items-center justify-center mb-6 text-blue-400"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg></div>
+          <h3 id="t-bento2-title" class="text-xl font-bold mb-2 text-white">Whale Radar Charts</h3>
+          <p id="t-bento2-desc" class="text-cyan-100/50 text-sm leading-relaxed">Monitor real-time price movements and your profit waves seamlessly.</p>
+        </div>
+      </div>
+
+      <div class="flex flex-col items-center justify-center py-10 lg:py-0">
+        <h3 id="t-mascot-title" class="text-4xl md:text-5xl font-black text-center mb-16 tracking-tighter uppercase leading-none drop-shadow-2xl"><span class="text-white">THE</span><br><span class="text-transparent bg-clip-text bg-gradient-to-b from-cyan-300 to-blue-600">APEX PREDATOR</span></h3>
+        <div id="interactive-mascot" class="text-cyan-400 drop-shadow-[0_0_50px_rgba(34,211,238,0.6)] w-48 h-48 md:w-64 md:h-64 transition-transform duration-[50ms] origin-center">
+          <svg viewBox="0 0 512 512" fill="currentColor" class="w-full h-full filter drop-shadow-2xl"><path d="M112 112c0-35.3 28.7-64 64-64h16c8.8 0 16-7.2 16-16s-7.2-16-16-16H176C123 16 80 59 80 112v16c0 8.8 7.2 16 16 16s16-7.2 16-16V112zm384 144c0-26.5-21.5-48-48-48H395c-9.1-34.9-30-66.2-59.5-88.8-19.1-14.7-44-18.7-66.8-10.8-21.4 7.4-40 21.4-52.6 40.5-8.2 12.4-23.7 17.5-37.5 12.3l-20-7.5c-23.9-9-49.8-11.2-74.9-6.3-25.2 4.9-48.8 15.8-68.5 31.6L0 200.5V368c0 26.5 21.5 48 48 48h416c26.5 0 48-21.5 48-48V256zM128 320c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32z"></path></svg>
+        </div>
+      </div>
+
+      <div class="space-y-6">
+        <div class="glass-card p-8 rounded-[2rem] hover:-translate-y-1 transition-transform duration-300">
+          <div class="w-14 h-14 rounded-2xl bg-purple-900/50 border border-purple-500/30 flex items-center justify-center mb-6 text-purple-400"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg></div>
+          <h3 id="t-bento3-title" class="text-xl font-bold mb-2 text-white">Instant Cross-Swap</h3>
+          <p id="t-bento3-desc" class="text-cyan-100/50 text-sm leading-relaxed">Swap crypto assets with lightning speed and absolute minimal gas fees.</p>
+        </div>
+        <div class="glass-card p-8 rounded-[2rem] hover:-translate-y-1 transition-transform duration-300">
+          <div class="w-14 h-14 rounded-2xl bg-emerald-900/50 border border-emerald-500/30 flex items-center justify-center mb-6 text-emerald-400"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
+          <h3 id="t-bento4-title" class="text-xl font-bold mb-2 text-white">Hyper Fast Node</h3>
+          <p id="t-bento4-desc" class="text-cyan-100/50 text-sm leading-relaxed">Directly connected to premium RPC Nodes ensuring zero lags or pending tx.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-20 relative z-10 max-w-4xl mx-auto px-6">
+    <div class="text-center mb-10">
+      <h2 id="t-play-title" class="text-4xl font-black text-white">Deep Sea Radar</h2>
+      <p id="t-play-sub" class="text-cyan-400 mt-2 font-bold tracking-widest uppercase text-sm">Play the sonar to find hidden treasures</p>
+    </div>
+    <div class="glass-card rounded-[2.5rem] p-10 flex flex-col items-center justify-center relative overflow-hidden group">
+      <div class="relative w-48 h-48 rounded-full border-2 border-cyan-500/50 bg-cyan-900/20 flex items-center justify-center overflow-hidden shadow-[0_0_30px_rgba(34,211,238,0.2)]">
+         <div id="radar-sweep" class="absolute w-full h-full bg-[conic-gradient(from_0deg,transparent_70%,rgba(34,211,238,0.8)_100%)] rounded-full origin-center hidden"></div>
+         <div class="w-2 h-2 bg-cyan-400 rounded-full shadow-[0_0_10px_#22d3ee] z-10"></div>
+         <div class="absolute w-32 h-32 border border-cyan-500/30 rounded-full pointer-events-none"></div>
+         <div class="absolute w-16 h-16 border border-cyan-500/30 rounded-full pointer-events-none"></div>
+      </div>
+      <div class="mt-8 text-center h-16 flex items-center justify-center"><p id="radar-result" class="text-lg font-mono text-slate-400">---</p></div>
+      <button id="btn-radar" class="px-8 py-3 mt-4 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-full transition-all shadow-[0_0_20px_rgba(6,182,212,0.4)] active:scale-95 border border-cyan-400/50 cursor-pointer">Ping Sonar</button>
+    </div>
+  </section>
+
+  <section class="py-10 relative z-10">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="glass-card rounded-[2rem] p-10 flex flex-col md:flex-row justify-around items-center gap-10 border-b-4 border-cyan-500/50 shadow-[0_20px_50px_rgba(34,211,238,0.1)] relative overflow-hidden group">
+        <div class="absolute inset-0 bg-gradient-to-r from-blue-900/10 via-cyan-900/10 to-purple-900/10 group-hover:from-blue-900/30 transition-colors duration-700"></div>
+        <div class="text-center relative z-10 transform transition-transform hover:scale-110"><h4 class="text-5xl md:text-6xl font-black text-white mb-2 tracking-tighter">2M<span class="text-cyan-400">+</span></h4><p id="t-stat1" class="text-sm text-cyan-100/50 uppercase tracking-widest font-bold">Active Whales</p></div>
+        <div class="hidden md:block w-px h-16 bg-cyan-900/50"></div>
+        <div class="text-center relative z-10 transform transition-transform hover:scale-110"><h4 class="text-5xl md:text-6xl font-black text-white mb-2 tracking-tighter">$10B<span class="text-cyan-400">+</span></h4><p id="t-stat2" class="text-sm text-cyan-100/50 uppercase tracking-widest font-bold">Trading Volume</p></div>
+        <div class="hidden md:block w-px h-16 bg-cyan-900/50"></div>
+        <div class="text-center relative z-10 transform transition-transform hover:scale-110"><h4 class="text-5xl md:text-6xl font-black text-white mb-2 tracking-tighter">0<span class="text-cyan-400">%</span></h4><p id="t-stat3" class="text-sm text-cyan-100/50 uppercase tracking-widest font-bold">Hack Incidents</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-20 relative z-10 max-w-4xl mx-auto px-6">
+    <div class="text-center mb-16"><h2 id="t-tltitle" class="text-4xl font-black mb-4">How to Start <span class="text-cyan-400">Diving</span></h2><p id="t-tlsub" class="text-cyan-100/50">Three simple steps to join the Web3 whale pod.</p></div>
+    <div class="space-y-12 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-1 before:bg-gradient-to-b before:from-cyan-900/10 before:via-cyan-500/50 before:to-cyan-900/10">
+      <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+        <div class="flex items-center justify-center w-10 h-10 rounded-full border-4 border-[#080f1e] bg-cyan-500 text-slate-900 font-bold shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-[0_0_20px_rgba(34,211,238,0.6)] z-10">1</div>
+        <div class="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] glass-card p-6 md:p-8 rounded-3xl border-transparent hover:border-cyan-400/50 transition-colors duration-300 shadow-lg"><h3 id="t-s1-title" class="text-xl font-bold mb-2 text-white">Prepare Your Oxygen</h3><p id="t-s1-desc" class="text-cyan-100/60 text-sm leading-relaxed">Install MetaMask extension in your browser. Always keep your Seed Phrase secure.</p></div>
+      </div>
+      <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+        <div class="flex items-center justify-center w-10 h-10 rounded-full border-4 border-[#080f1e] bg-slate-800 text-cyan-500 font-bold shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 group-hover:bg-cyan-500 group-hover:text-slate-900 transition-colors">2</div>
+        <div class="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] glass-card p-6 md:p-8 rounded-3xl border-transparent hover:border-cyan-400/50 transition-colors duration-300 shadow-lg"><h3 id="t-s2-title" class="text-xl font-bold mb-2 text-white">Connect the Radar</h3><p id="t-s2-desc" class="text-cyan-100/60 text-sm leading-relaxed">Scroll to the bottom of this page, click "Awaken The Whale" to authorize connection.</p></div>
+      </div>
+      <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
+        <div class="flex items-center justify-center w-10 h-10 rounded-full border-4 border-[#080f1e] bg-slate-800 text-cyan-500 font-bold shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 group-hover:bg-cyan-500 group-hover:text-slate-900 transition-colors">3</div>
+        <div class="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] glass-card p-6 md:p-8 rounded-3xl border-transparent hover:border-cyan-400/50 transition-colors duration-300 shadow-lg"><h3 id="t-s3-title" class="text-xl font-bold mb-2 text-white">Start Swimming</h3><p id="t-s3-desc" class="text-cyan-100/60 text-sm leading-relaxed">Monitor live market waves, send assets, and manage your wealth elegantly.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="min-h-[60vh] flex flex-col items-center justify-center relative z-10 p-6">
+    <div class="text-center mb-10">
+      <h2 id="t-cta-title" class="text-4xl font-black text-white">Ready to Dive?</h2>
+      <p id="t-cta-sub" class="text-cyan-400 mt-2 font-bold tracking-widest uppercase text-sm">Prove you are not just a Plankton</p>
+    </div>
+    
+    <div class="glass-card rounded-[2.5rem] p-8 md:p-10 w-full max-w-md text-center shadow-[0_0_80px_rgba(34,211,238,0.1)] border-t border-cyan-400/30 cursor-pointer group">
+      <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-slate-900/80 flex items-center justify-center border border-cyan-800 shadow-[0_0_40px_rgba(34,211,238,0.15)] text-cyan-400 group-hover:shadow-[0_0_60px_rgba(34,211,238,0.4)] transition-all">
+        <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 512 512"><path d="M112 112c0-35.3 28.7-64 64-64h16c8.8 0 16-7.2 16-16s-7.2-16-16-16H176C123 16 80 59 80 112v16c0 8.8 7.2 16 16 16s16-7.2 16-16V112zm384 144c0-26.5-21.5-48-48-48H395c-9.1-34.9-30-66.2-59.5-88.8-19.1-14.7-44-18.7-66.8-10.8-21.4 7.4-40 21.4-52.6 40.5-8.2 12.4-23.7 17.5-37.5 12.3l-20-7.5c-23.9-9-49.8-11.2-74.9-6.3-25.2 4.9-48.8 15.8-68.5 31.6L0 200.5V368c0 26.5 21.5 48 48 48h416c26.5 0 48-21.5 48-48V256zM128 320c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32z"></path></svg>
+      </div>
+      <h2 id="t-card-title" class="text-2xl font-black mb-3">Gateway to Web3</h2>
+      <p id="t-card-desc" class="text-sm text-cyan-100/50 mb-8">Awaken your MetaMask to unlock the Nexus Whale Extension.</p>
+      <button id="btn-connect" class="w-full py-4 bg-gradient-to-r from-blue-700 via-cyan-600 to-cyan-500 hover:from-blue-600 hover:to-cyan-400 rounded-2xl font-black text-lg shadow-[0_10px_30px_rgba(6,182,212,0.3)] transition-all active:scale-95 text-white tracking-wide border border-cyan-400/50 cursor-pointer">
+        Awaken The Whale 🐳
+      </button>
+    </div>
+  </section>
+
+  <footer class="border-t border-cyan-900/30 bg-[#060b14] py-12 relative z-10 text-center">
+    <h2 class="text-2xl font-black text-white mb-2">NEXUS WHALE</h2>
+    <p class="text-cyan-100/40 text-sm mb-8">Built with Go, Vanilla JS & Tailwind by Ghifari Akbar</p>
+  </footer>
+
+  <div id="ext-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[999] hidden opacity-0 transition-opacity duration-300 flex items-center justify-center md:justify-end md:pr-10">
+    <div id="ext-container" class="ext-bg w-full h-[100dvh] md:w-[480px] md:h-[800px] md:rounded-[30px] border-0 md:border md:border-cyan-900/50 shadow-[0_0_80px_rgba(34,211,238,0.2)] flex flex-col transform translate-y-10 transition-transform duration-500 relative overflow-hidden">
+      
+      <div class="flex justify-between items-center p-6 border-b border-slate-800">
+        <div class="flex items-center gap-2 text-cyan-400 font-bold">
+          <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 512 512"><path d="M112 112c0-35.3 28.7-64 64-64h16c8.8 0 16-7.2 16-16s-7.2-16-16-16H176C123 16 80 59 80 112v16c0 8.8 7.2 16 16 16s16-7.2 16-16V112zm384 144c0-26.5-21.5-48-48-48H395c-9.1-34.9-30-66.2-59.5-88.8-19.1-14.7-44-18.7-66.8-10.8-21.4 7.4-40 21.4-52.6 40.5-8.2 12.4-23.7 17.5-37.5 12.3l-20-7.5c-23.9-9-49.8-11.2-74.9-6.3-25.2 4.9-48.8 15.8-68.5 31.6L0 200.5V368c0 26.5 21.5 48 48 48h416c26.5 0 48-21.5 48-48V256zM128 320c-17.7 0-32-14.3-32-32s14.3-32 32-32 32 14.3 32 32-14.3 32-32 32z"></path></svg>
+          <span class="text-base tracking-wider">NEXUS</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <span class="px-3 py-1 bg-slate-800 rounded-full text-xs font-bold text-slate-300 flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_10px_#22d3ee]"></span> Mainnet</span>
+          <button id="btn-close-ext" class="text-slate-400 hover:text-white transition-colors cursor-pointer"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto no-scrollbar relative">
+        <div id="view-home" class="p-8 flex flex-col items-center">
+          <div id="copy-address-btn" class="px-5 py-2.5 bg-cyan-900/20 border border-cyan-800/50 rounded-2xl flex items-center gap-3 mb-8 cursor-pointer hover:bg-cyan-900/50 hover:scale-105 transition-all group" title="Copy to Clipboard">
+            <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-500 to-cyan-400"></div>
+            <span id="ext-address" class="text-base font-mono text-cyan-100 font-bold group-hover:text-cyan-300 transition-colors">0x...</span>
+          </div>
+
+          <h2 class="text-5xl font-black text-white tracking-tighter flex items-end gap-2 mb-2 drop-shadow-md"><span id="ext-balance">0.00</span> <span class="text-2xl text-cyan-500">ETH</span></h2>
+          <p id="ext-fiat" class="text-slate-400 text-base font-mono mb-10">Fetching rates...</p>
+
+          <div class="flex justify-center gap-6 mb-10 w-full">
+            <div class="flex flex-col items-center gap-3 group cursor-not-allowed opacity-50"><div class="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg></div><span id="t-ic-buy" class="text-sm font-bold text-cyan-100">Buy</span></div>
+            <button onclick="bukaViewKirim()" class="flex flex-col items-center gap-3 group cursor-pointer"><div class="w-14 h-14 rounded-full bg-cyan-600 flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-[0_0_20px_rgba(6,182,212,0.4)]"><svg class="w-6 h-6 transform rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V6m0 0l-8 8m8-8l8 8"></path></svg></div><span id="t-ic-send" class="text-sm font-bold text-cyan-100">Send</span></button>
+            <div class="flex flex-col items-center gap-3 group cursor-not-allowed opacity-50"><div class="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg></div><span class="text-sm font-bold text-cyan-100">Swap</span></div>
+          </div>
+
+          <div class="w-full border-b border-slate-800 flex mb-6">
+            <button id="tab-btn-token" onclick="switchTab('token')" class="flex-1 pb-4 text-base font-bold text-cyan-400 border-b-2 border-cyan-400 cursor-pointer">Tokens</button>
+            <button id="tab-btn-nft" onclick="switchTab('nft')" class="flex-1 pb-4 text-base font-bold text-slate-500 hover:text-slate-300 cursor-pointer">NFTs</button>
+            <button id="tab-btn-activity" onclick="switchTab('activity')" class="flex-1 pb-4 text-base font-bold text-slate-500 hover:text-slate-300 cursor-pointer">Activity</button>
+          </div>
+
+          <div id="tab-content-token" class="w-full animate-[fadeIn_0.3s]">
+            <div class="bg-slate-800/30 rounded-2xl p-5 border border-slate-800">
+              <div class="flex justify-between items-center mb-3"><span class="text-sm font-bold text-slate-400 uppercase tracking-wider">7-Day Chart</span><span class="text-sm text-green-400 font-bold">+2.4%</span></div>
+              <div class="w-full h-40 relative"><canvas id="ethChart"></canvas></div>
+            </div>
+          </div>
+          
+          <div id="tab-content-nft" class="w-full hidden animate-[fadeIn_0.3s]">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="nft-card bg-slate-800/50 rounded-2xl p-3 border border-slate-700/50 hover:border-cyan-500/50 cursor-pointer"><img src="https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?auto=format&fit=crop&w=300&q=80" class="w-full h-32 object-cover rounded-xl mb-3"><p class="text-sm font-bold">Nexus Core #01</p></div>
+              <div class="nft-card bg-slate-800/50 rounded-2xl p-3 border border-slate-700/50 hover:border-cyan-500/50 cursor-pointer"><img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=300&q=80" class="w-full h-32 object-cover rounded-xl mb-3"><p class="text-sm font-bold">Deep Whale #88</p></div>
+            </div>
+          </div>
+          
+          <div id="tab-content-activity" class="w-full hidden animate-[fadeIn_0.3s]">
+            <div class="space-y-4">
+              <div class="flex items-center gap-5 p-4 bg-slate-800/30 rounded-2xl border border-slate-800 cursor-pointer hover:bg-slate-800/50"><div class="w-12 h-12 rounded-full bg-cyan-900/50 flex items-center justify-center text-cyan-400"><svg class="w-6 h-6 transform rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 19V6m0 0l-8 8m8-8l8 8"></path></svg></div><div class="flex-1"><h4 class="text-base font-bold text-white">Send</h4><p class="text-sm text-green-400">Confirmed</p></div><div class="text-right"><h4 class="text-base font-bold text-white">-0.01 ETH</h4><p class="text-sm text-slate-400">Oct 24</p></div></div>
+              <div class="flex items-center gap-5 p-4 bg-slate-800/30 rounded-2xl border border-slate-800 cursor-pointer hover:bg-slate-800/50"><div class="w-12 h-12 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400"><svg class="w-6 h-6 transform rotate-225" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V6m0 0l-8 8m8-8l8 8"></path></svg></div><div class="flex-1"><h4 class="text-base font-bold text-white">Receive</h4><p class="text-sm text-green-400">Confirmed</p></div><div class="text-right"><h4 class="text-base font-bold text-white">+0.50 ETH</h4><p class="text-sm text-slate-400">Oct 20</p></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="view-kirim" class="p-8 hidden absolute top-0 w-full h-full bg-[#080f1e] z-10 flex-col animate-[slideIn_0.3s]">
+          <div class="flex items-center gap-5 mb-10">
+            <button onclick="tutupViewKirim()" class="p-3 bg-slate-800 rounded-full hover:bg-slate-700 cursor-pointer"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
+            <h3 id="t-send-title" class="font-bold text-2xl">Send ETH</h3>
+          </div>
+          <div class="space-y-6 flex-1">
+            <div>
+              <label class="text-sm font-bold text-slate-400 mb-2 block">Send to</label>
+              <input type="text" id="send-address" placeholder="0x123abc..." class="w-full bg-slate-800/50 border border-slate-700 rounded-2xl px-5 py-4 text-base font-mono text-cyan-100 focus:outline-none focus:border-cyan-500">
+            </div>
+            <div>
+              <label class="text-sm font-bold text-slate-400 mb-2 block">Amount (ETH)</label>
+              <div class="relative">
+                <input type="number" id="send-amount" placeholder="0.01" class="w-full bg-slate-800/50 border border-slate-700 rounded-2xl px-5 py-4 text-xl font-bold bg-transparent focus:outline-none focus:border-cyan-500">
+                <span class="absolute right-5 top-4 text-slate-400 font-bold text-lg">ETH</span>
+              </div>
+            </div>
+          </div>
+          <button id="btn-execute-send" class="w-full py-5 mt-8 bg-cyan-600 hover:bg-cyan-500 rounded-2xl font-bold text-xl text-white shadow-[0_0_20px_rgba(6,182,212,0.4)] cursor-pointer">Confirm Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
