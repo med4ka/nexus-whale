@@ -37,7 +37,6 @@ func main() {
 			}
 		}
 
-	
 		prices := []float64{
 			ethPriceIDR * 0.90, 
 			ethPriceIDR * 0.93, 
@@ -48,13 +47,12 @@ func main() {
 			ethPriceIDR,       
 		}
 
-		
 		c.JSON(200, gin.H{
 			"price_idr": ethPriceIDR,
 			"chart":     prices,
 		})
 	})
 
-	fmt.Println("🚀 Proxy Web3 Anti-Badai jalan di http://localhost:8080")
+	fmt.Println("Web anda jalan di http://localhost:8080")
 	r.Run(":8080")
 }
