@@ -110,17 +110,14 @@ const spawnAlert = () => {
   
   alertContainer.appendChild(alert);
   
-  // Mainkan suara pelan notif
   playBloop();
 
-  // Hilang otomatis setelah 4 detik
   setTimeout(() => {
     alert.style.animation = 'slideOutLeft 0.5s ease-in forwards';
     setTimeout(() => alert.remove(), 500);
   }, 4000);
 };
 
-// Munculin alert acak setiap 12 sampai 20 detik
 setInterval(spawnAlert, Math.random() * 8000 + 12000);
 
 
